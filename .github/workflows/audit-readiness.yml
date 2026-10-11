@@ -22,6 +22,10 @@ jobs:
             sdk/package-lock.json
             app/package-lock.json
       - uses: Swatinem/rust-cache@v2
+      - name: Install Linux native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libudev-dev pkg-config
       - name: Install tested build tools
         run: |
           cargo install --locked cargo-build-sbf --version 4.1.0

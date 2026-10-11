@@ -6,7 +6,7 @@ Applications close **October 31, 2026**; announcements are scheduled for **Novem
 
 | Requirement | Candidate evidence / remaining action |
 | --- | --- |
-| Colosseum participant | **Not submitted, confirmed by applicant October 11.** A profile URL is not a project submission. Register and submit an eligible project before claiming participation; sponsor acceptance of the current event remains unconfirmed. |
+| Colosseum participant | Registered and [project draft created](https://colosseum.com/arena/projects/solanaguard-1) October 11; **final submission incomplete**. A draft URL is not proof of participation via a completed entry. Sponsor acceptance of the current event remains unconfirmed. |
 | Rights and attribution | The repository has a proprietary license. Preserve copyright and obtain permission for use and submission; public visibility alone is insufficient. |
 | Mature, stable code | SOL vault candidate, tests, SDK and scope manifest prepared locally; freeze commit after owner review. |
 | Accessible repository | Candidate published to the applicant's [audit-readiness branch](https://github.com/malsomesh9/solana/tree/codex/vaultline-audit-readiness); record an immutable commit when freezing scope. |
@@ -21,9 +21,9 @@ Selection considers project potential, dependence on secure code, and readiness.
 
 ## Colosseum entry prerequisite
 
-Checked October 11: the signed-in dashboard offers registration for Crypto World's Fair. Registration and submissions close October 12, 2026 at 11:59 p.m. PDT, equivalent to **October 13 at 12:29 p.m. IST**. Registration alone does not submit a project. See the [official rules](https://colosseum.com/legal/Crypto%20World's%20Fair%20Hackathon%20Rules.pdf) and [submission FAQ](https://colosseum.com/hackathon#faqs). The entry must disclose relevant prior development; this project predates the event. Keep the inherited baseline distinct from work completed during the competition. Never describe this proprietary repository as open source or claim sole authorship of inherited work.
+Checked October 11: Crypto World's Fair registration completed with applicant authorization, and a SolanaGuard draft was created. Registration and submissions close October 12, 2026 at 11:59 p.m. PDT, equivalent to **October 13 at 12:29 p.m. IST**. Registration alone does not submit a project. See the [official rules](https://colosseum.com/legal/Crypto%20World's%20Fair%20Hackathon%20Rules.pdf) and [submission FAQ](https://colosseum.com/hackathon#faqs). The entry must disclose relevant prior development; this project predates the event. Keep the inherited baseline distinct from work completed during the competition. Never describe this proprietary repository as open source or claim sole authorship of inherited work.
 
-The private local `SUBMISSION.md` contains proposed entry copy, video scripts and missing owner facts. Confirm personal eligibility and accept the rules before registration. An actual entry, accessible candidate, videos and accurate team/business facts remain necessary. The grant listing does not identify a specific Colosseum event, so a new Crypto World's Fair entry must not be represented as confirmed grant eligibility without sponsor clarification.
+The private local `SUBMISSION.md` contains proposed entry copy, video scripts and missing owner facts. The signed-in submission form requires a founder pitch up to two minutes, a separate live-product demo up to three minutes, a graphic, team Telegram contact and each teammate's submission profile. Those materials and final submission remain incomplete. The grant listing does not identify a specific Colosseum event, so a new Crypto World's Fair entry must not be represented as confirmed grant eligibility without sponsor clarification.
 
 ## Publication checklist
 
