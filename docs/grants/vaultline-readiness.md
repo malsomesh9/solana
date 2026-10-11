@@ -9,7 +9,7 @@ Applications close **October 31, 2026**; announcements are scheduled for **Novem
 | Colosseum participant | **Not submitted, confirmed by applicant October 11.** A profile URL is not a project submission. Register and submit an eligible project before claiming participation; sponsor acceptance of the current event remains unconfirmed. |
 | Rights and attribution | The repository has a proprietary license. Preserve copyright and obtain permission for use and submission; public visibility alone is insufficient. |
 | Mature, stable code | SOL vault candidate, tests, SDK and scope manifest prepared locally; freeze commit after owner review. |
-| Accessible repository | Public upstream exists; **this branch must be published** before reviewers can access its changes. |
+| Accessible repository | Candidate published to the applicant's [audit-readiness branch](https://github.com/malsomesh9/solana/tree/codex/vaultline-audit-readiness); record an immutable commit when freezing scope. |
 | Audit program and approximate LOC | `docs/AUDIT-SCOPE.md` and `docs/audit-manifest.json`. |
 | Stage, users, TVL | New code tested locally; owner must confirm deployment and current metrics with evidence. |
 | Project description and audit rationale | Prepared in the private local `GRANT-APPLICATION.md` draft. |
@@ -29,6 +29,6 @@ The private local `SUBMISSION.md` contains proposed entry copy, video scripts an
 
 - Review the candidate diff and native-SOL scope. No SPL or arbitrary-protocol support should be claimed.
 - Run `scripts/verify.sh` from the committed candidate, and update verification evidence after changes.
-- Publish the branch and record the exact reviewed commit in the application. Keep contact and budget details private unless intended for publication.
+- Record the exact reviewed commit in the application. Keep contact and budget details private unless intended for publication.
 - Confirm the actual Colosseum link, team contact, user/TVL measurements, deployment version and authority.
 - Submit through the official application form once all owner fields are complete. No application was submitted by this preparation work.
