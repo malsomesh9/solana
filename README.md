@@ -118,4 +118,4 @@ Repository base: [`abhigyan1102/solana`](https://github.com/abhigyan1102/solana)
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Proprietary; copyright Abhigyan Singh. See [LICENSE](LICENSE). Public repository access does not grant reuse rights. Obtain the owner's permission before modifying, distributing, or submitting this code. No license change is made by this audit-readiness branch.
