@@ -2022,7 +2022,7 @@ const GuestDemo: React.FC<{ onExit: () => void; onConsole: () => void }> = ({
             <h2 id="guest-cta-title">Make the rules for your own agent.</h2>
             <p className="muted">
               Open the console and connect a wallet to register an agent and
-              create a policy on devnet.{' '}
+              create a policy in the evaluation dashboard.{' '}
             </p>
           </div>
           <button className="btn btn-primary" type="button" onClick={onConsole}>

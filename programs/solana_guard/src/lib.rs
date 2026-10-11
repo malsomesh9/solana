@@ -1,22 +1,13 @@
 //! SolanaGuard — on-chain policy enforcement for AI-agent Solana wallets.
 //!
-//! This program is the on-chain enforcement layer for SolanaGuard. An owner
-//! registers an agent (a delegate keypair the AI agent uses), attaches a spending
-//! policy, and every transaction the agent wants to make is checked **on-chain**
-//! against that policy. A violating transaction reverts — the agent literally
-//! cannot execute it — instead of merely being recorded by an off-chain service.
-//!
-//! Scope of this first on-chain phase:
-//! - register / configure / pause agents and policies on-chain (PDAs)
-//! - enforce per-tx limit, rolling daily limit, protocol allowlist, and pause
-//! - immutable on-chain transaction log for approved actions + events
-//!
-//! TODO (next phase): move the agent's funds into a program-owned vault PDA and
-//! perform the actual SOL/SPL transfer via CPI *inside* `validate_and_execute`,
-//! after the checks pass. The enforcement skeleton below is already structured so
-//! the transfer slots in right after `evaluate_policy` returns `Reason::Allowed`.
+//! An owner funds a per-agent SOL vault PDA. Only this program can sign for
+//! the vault. The registered agent can move SOL through a typed System Program
+//! CPI after policy checks; the owner retains unconditional recovery authority.
+//! Funds outside the vault are outside this protection. SPL tokens and arbitrary
+//! protocol calls are deliberately outside the v0.2 audit scope.
 
 use anchor_lang::prelude::*;
+use anchor_lang::system_program::{self, Transfer};
 
 declare_id!("EdskrgG3PmMPxzaNuvp7oJjZ5MU3jkXmY4bHbSYpnsWF");
 
@@ -30,6 +21,7 @@ pub const AGENT_SEED: &[u8] = b"agent_config";
 pub const POLICY_SEED: &[u8] = b"policy";
 pub const NONCE_SEED: &[u8] = b"agent_nonce";
 pub const TX_LOG_SEED: &[u8] = b"tx_log";
+pub const VAULT_SEED: &[u8] = b"vault";
 
 #[program]
 pub mod solana_guard {
@@ -70,7 +62,10 @@ pub mod solana_guard {
         allowed_protocols: Vec<Pubkey>,
     ) -> Result<()> {
         require!(max_spend_per_tx > 0, GuardError::InvalidSpendingLimit);
-        require!(daily_limit >= max_spend_per_tx, GuardError::InvalidDailyLimit);
+        require!(
+            daily_limit >= max_spend_per_tx,
+            GuardError::InvalidDailyLimit
+        );
         require!(
             allowed_protocols.len() <= MAX_ALLOWED_PROTOCOLS,
             GuardError::TooManyProtocols
@@ -157,6 +152,59 @@ pub mod solana_guard {
         set_agent_active(&mut ctx.accounts.agent_config, true)
     }
 
+    /// Fund this owner's agent vault. The delegate never receives vault authority.
+    pub fn deposit_sol(ctx: Context<ManageVault>, amount: u64) -> Result<()> {
+        require!(amount > 0, GuardError::InvalidAmount);
+        system_program::transfer(
+            CpiContext::new(
+                system_program::ID,
+                Transfer {
+                    from: ctx.accounts.owner.to_account_info(),
+                    to: ctx.accounts.vault.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+        emit!(VaultFunded {
+            owner: ctx.accounts.owner.key(),
+            agent: ctx.accounts.agent_config.agent,
+            vault: ctx.accounts.vault.key(),
+            amount,
+        });
+        Ok(())
+    }
+
+    /// Recover SOL to the owner, even when the agent or policy is paused.
+    /// Partial withdrawals must leave a rent-exempt balance; full recovery is allowed.
+    pub fn withdraw_sol(ctx: Context<ManageVault>, amount: u64) -> Result<()> {
+        require!(amount > 0, GuardError::InvalidAmount);
+        require!(
+            ctx.accounts.vault.lamports() >= amount,
+            GuardError::InsufficientVaultFunds
+        );
+        let config_key = ctx.accounts.agent_config.key();
+        let bump = [ctx.bumps.vault];
+        let seeds: &[&[u8]] = &[VAULT_SEED, config_key.as_ref(), &bump];
+        system_program::transfer(
+            CpiContext::new(
+                system_program::ID,
+                Transfer {
+                    from: ctx.accounts.vault.to_account_info(),
+                    to: ctx.accounts.owner.to_account_info(),
+                },
+            )
+            .with_signer(&[seeds]),
+            amount,
+        )?;
+        emit!(VaultWithdrawn {
+            owner: ctx.accounts.owner.key(),
+            agent: ctx.accounts.agent_config.agent,
+            vault: ctx.accounts.vault.key(),
+            amount,
+        });
+        Ok(())
+    }
+
     /// The agent requests to execute a transaction. The policy is enforced
     /// on-chain: a violation returns an error and the whole transaction reverts.
     pub fn validate_and_execute(
@@ -164,6 +212,18 @@ pub mod solana_guard {
         amount: u64,
         target_protocol: Pubkey,
     ) -> Result<()> {
+        require!(amount > 0, GuardError::InvalidAmount);
+        // The caller cannot label a transfer as some other allowlisted protocol.
+        require_keys_eq!(
+            target_protocol,
+            system_program::ID,
+            GuardError::UnsupportedProtocol
+        );
+        require_keys_neq!(
+            ctx.accounts.recipient.key(),
+            ctx.accounts.vault.key(),
+            GuardError::InvalidRecipient
+        );
         let now = Clock::get()?.unix_timestamp;
         let policy = &mut ctx.accounts.policy;
         let config = &ctx.accounts.agent_config;
@@ -199,9 +259,38 @@ pub mod solana_guard {
             return Err(decision.into_error());
         }
 
-        // --- Approved path ---
-        // TODO(next phase): perform the real CPI fund transfer from the agent's
-        // vault PDA here, now that the policy checks have passed.
+        // Reject arithmetic/funding problems before CPI. A failed CPI rolls back
+        // the transfer, counter, nonce and log initialization atomically.
+        let next_nonce = ctx
+            .accounts
+            .agent_nonce
+            .nonce
+            .checked_add(1)
+            .ok_or(GuardError::NonceExhausted)?;
+        let remaining = ctx
+            .accounts
+            .vault
+            .lamports()
+            .checked_sub(amount)
+            .ok_or(GuardError::InsufficientVaultFunds)?;
+        require!(
+            remaining >= Rent::get()?.minimum_balance(0),
+            GuardError::VaultRentReserve
+        );
+        let config_key = config.key();
+        let bump = [ctx.bumps.vault];
+        let seeds: &[&[u8]] = &[VAULT_SEED, config_key.as_ref(), &bump];
+        system_program::transfer(
+            CpiContext::new(
+                system_program::ID,
+                Transfer {
+                    from: ctx.accounts.vault.to_account_info(),
+                    to: ctx.accounts.recipient.to_account_info(),
+                },
+            )
+            .with_signer(&[seeds]),
+            amount,
+        )?;
         policy.daily_spent = policy
             .daily_spent
             .checked_add(amount)
@@ -209,13 +298,14 @@ pub mod solana_guard {
 
         let nonce_account = &mut ctx.accounts.agent_nonce;
         let current_nonce = nonce_account.nonce;
-        nonce_account.nonce = current_nonce.checked_add(1).unwrap_or(current_nonce);
+        nonce_account.nonce = next_nonce;
 
         let tx_log = &mut ctx.accounts.tx_log;
         tx_log.agent = config.agent;
         tx_log.owner = config.owner;
         tx_log.amount = amount;
         tx_log.target_protocol = target_protocol;
+        tx_log.recipient = ctx.accounts.recipient.key();
         tx_log.executed_at = now;
         tx_log.was_approved = true;
         tx_log.nonce = current_nonce;
@@ -228,6 +318,7 @@ pub mod solana_guard {
             target_protocol,
             nonce: current_nonce,
             executed_at: now,
+            recipient: ctx.accounts.recipient.key(),
         });
         Ok(())
     }
@@ -353,6 +444,7 @@ pub struct TransactionLog {
     pub owner: Pubkey,
     pub amount: u64,
     pub target_protocol: Pubkey,
+    pub recipient: Pubkey,
     pub executed_at: i64,
     pub was_approved: bool,
     pub nonce: u64,
@@ -445,6 +537,22 @@ pub struct ToggleAgent<'info> {
     pub agent_config: Account<'info, AgentConfig>,
 }
 
+/// Owner-only funding and recovery; the vault address is bound to this config.
+#[derive(Accounts)]
+pub struct ManageVault<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(
+        has_one = owner @ GuardError::UnauthorizedOwner,
+        seeds = [AGENT_SEED, owner.key().as_ref(), agent_config.agent.as_ref()],
+        bump = agent_config.bump
+    )]
+    pub agent_config: Account<'info, AgentConfig>,
+    #[account(mut, seeds = [VAULT_SEED, agent_config.key().as_ref()], bump)]
+    pub vault: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
 #[derive(Accounts)]
 #[instruction(amount: u64, target_protocol: Pubkey)]
 pub struct ValidateAndExecute<'info> {
@@ -485,6 +593,13 @@ pub struct ValidateAndExecute<'info> {
     )]
     pub tx_log: Account<'info, TransactionLog>,
 
+    #[account(mut, seeds = [VAULT_SEED, agent_config.key().as_ref()], bump)]
+    pub vault: SystemAccount<'info>,
+
+    /// Native SOL recipient; cannot alias the vault. No arbitrary CPI accounts.
+    #[account(mut)]
+    pub recipient: SystemAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -523,6 +638,23 @@ pub struct TransactionValidated {
     pub target_protocol: Pubkey,
     pub nonce: u64,
     pub executed_at: i64,
+    pub recipient: Pubkey,
+}
+
+#[event]
+pub struct VaultFunded {
+    pub owner: Pubkey,
+    pub agent: Pubkey,
+    pub vault: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct VaultWithdrawn {
+    pub owner: Pubkey,
+    pub agent: Pubkey,
+    pub vault: Pubkey,
+    pub amount: u64,
 }
 
 #[event]
@@ -565,6 +697,18 @@ pub enum GuardError {
     InvalidSpendingLimit,
     #[msg("Daily limit must be greater than or equal to per-transaction limit")]
     InvalidDailyLimit,
+    #[msg("Amount must be greater than zero")]
+    InvalidAmount,
+    #[msg("This version only executes native SOL transfers via the System Program")]
+    UnsupportedProtocol,
+    #[msg("Recipient cannot be the vault itself")]
+    InvalidRecipient,
+    #[msg("Transaction nonce exhausted")]
+    NonceExhausted,
+    #[msg("Vault has insufficient SOL")]
+    InsufficientVaultFunds,
+    #[msg("Agent spending must preserve the vault rent reserve")]
+    VaultRentReserve,
 }
 
 // ---------------------------------------------------------------------------

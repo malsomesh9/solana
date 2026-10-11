@@ -292,8 +292,7 @@ export default function ConsoleShell({
         {children}
         <footer className="sg-console-footer">
           <p>
-            Solana devnet <span>·</span> Not audited <span>·</span> Guarded fund
-            movement is still in development.
+            Solana devnet <span>·</span> Not audited <span>·</span> The dashboard evaluates policies; it does not move funds.
           </p>
           <a
             href="https://github.com/abhigyan1102/solana"

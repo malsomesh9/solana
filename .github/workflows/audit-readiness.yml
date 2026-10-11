@@ -1,0 +1,30 @@
+name: Audit readiness
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.94.0'
+          components: rustfmt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            sdk/package-lock.json
+            app/package-lock.json
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tested build tools
+        run: |
+          cargo install --locked cargo-build-sbf --version 4.1.0
+          cargo install --locked anchor-cli --version 0.32.1
+      - name: Verify compiled program, SDK, generated artifacts and dashboard build
+        run: ./scripts/verify.sh

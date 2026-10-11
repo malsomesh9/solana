@@ -1,0 +1,1300 @@
+{
+  "address": "EdskrgG3PmMPxzaNuvp7oJjZ5MU3jkXmY4bHbSYpnsWF",
+  "metadata": {
+    "name": "solana_guard",
+    "version": "0.2.0",
+    "spec": "0.1.0",
+    "description": "On-chain risk enforcement layer for AI agents on Solana"
+  },
+  "instructions": [
+    {
+      "name": "deposit_sol",
+      "docs": [
+        "Fund this owner's agent vault. The delegate never receives vault authority."
+      ],
+      "discriminator": [
+        108,
+        81,
+        78,
+        117,
+        125,
+        155,
+        56,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent_config.agent",
+                "account": "AgentConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pause_agent",
+      "docs": [
+        "Convenience wrapper: freeze an agent (kill switch)."
+      ],
+      "discriminator": [
+        148,
+        32,
+        1,
+        26,
+        147,
+        122,
+        178,
+        140
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_agent",
+      "docs": [
+        "Register an agent under an owner. Creates the agent config + nonce PDAs."
+      ],
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent",
+          "docs": [
+            "not need to sign at registration time."
+          ]
+        },
+        {
+          "name": "agent_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent_nonce",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  110,
+                  111,
+                  110,
+                  99,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_policy",
+      "docs": [
+        "Attach a spending policy to a registered agent."
+      ],
+      "discriminator": [
+        40,
+        133,
+        12,
+        157,
+        235,
+        202,
+        2,
+        132
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config"
+        },
+        {
+          "name": "policy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  105,
+                  99,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_spend_per_tx",
+          "type": "u64"
+        },
+        {
+          "name": "daily_limit",
+          "type": "u64"
+        },
+        {
+          "name": "allowed_protocols",
+          "type": {
+            "vec": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "toggle_agent",
+      "docs": [
+        "Generic active/inactive toggle for an agent (matches the existing IDL)."
+      ],
+      "discriminator": [
+        120,
+        12,
+        33,
+        150,
+        191,
+        220,
+        109,
+        84
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "is_active",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "unpause_agent",
+      "docs": [
+        "Convenience wrapper: unfreeze a previously paused agent."
+      ],
+      "discriminator": [
+        46,
+        125,
+        165,
+        212,
+        241,
+        143,
+        190,
+        95
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_policy",
+      "docs": [
+        "Update individual policy fields. `None` leaves a field unchanged."
+      ],
+      "discriminator": [
+        212,
+        245,
+        246,
+        7,
+        163,
+        151,
+        18,
+        57
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config"
+        },
+        {
+          "name": "policy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  105,
+                  99,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "max_spend_per_tx",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "daily_limit",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "allowed_protocols",
+          "type": {
+            "option": {
+              "vec": "pubkey"
+            }
+          }
+        },
+        {
+          "name": "is_active",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
+    },
+    {
+      "name": "validate_and_execute",
+      "docs": [
+        "The agent requests to execute a transaction. The policy is enforced",
+        "on-chain: a violation returns an error and the whole transaction reverts."
+      ],
+      "discriminator": [
+        225,
+        116,
+        46,
+        60,
+        172,
+        253,
+        36,
+        115
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "owner",
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "policy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  105,
+                  99,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent_nonce",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  110,
+                  111,
+                  110,
+                  99,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tx_log",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  120,
+                  95,
+                  108,
+                  111,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              },
+              {
+                "kind": "account",
+                "path": "agent_nonce.nonce",
+                "account": "AgentNonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient",
+          "docs": [
+            "Native SOL recipient; cannot alias the vault. No arbitrary CPI accounts."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "target_protocol",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_sol",
+      "docs": [
+        "Recover SOL to the owner, even when the agent or policy is paused.",
+        "Partial withdrawals must leave a rent-exempt balance; full recovery is allowed."
+      ],
+      "discriminator": [
+        145,
+        131,
+        74,
+        136,
+        65,
+        137,
+        42,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent_config"
+          ]
+        },
+        {
+          "name": "agent_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "account",
+                "path": "agent_config.agent",
+                "account": "AgentConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AgentConfig",
+      "discriminator": [
+        253,
+        238,
+        178,
+        11,
+        45,
+        187,
+        48,
+        224
+      ]
+    },
+    {
+      "name": "AgentNonce",
+      "discriminator": [
+        208,
+        239,
+        20,
+        178,
+        150,
+        131,
+        132,
+        97
+      ]
+    },
+    {
+      "name": "Policy",
+      "discriminator": [
+        222,
+        135,
+        7,
+        163,
+        235,
+        177,
+        33,
+        68
+      ]
+    },
+    {
+      "name": "TransactionLog",
+      "discriminator": [
+        26,
+        131,
+        178,
+        93,
+        195,
+        70,
+        29,
+        67
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AgentPaused",
+      "discriminator": [
+        228,
+        35,
+        167,
+        28,
+        96,
+        5,
+        210,
+        82
+      ]
+    },
+    {
+      "name": "AgentRegistered",
+      "discriminator": [
+        191,
+        78,
+        217,
+        54,
+        232,
+        100,
+        189,
+        85
+      ]
+    },
+    {
+      "name": "PolicyUpdated",
+      "discriminator": [
+        225,
+        112,
+        112,
+        67,
+        95,
+        236,
+        245,
+        161
+      ]
+    },
+    {
+      "name": "TransactionBlocked",
+      "discriminator": [
+        3,
+        64,
+        83,
+        53,
+        179,
+        19,
+        131,
+        87
+      ]
+    },
+    {
+      "name": "TransactionValidated",
+      "discriminator": [
+        172,
+        187,
+        2,
+        112,
+        4,
+        67,
+        194,
+        66
+      ]
+    },
+    {
+      "name": "VaultFunded",
+      "discriminator": [
+        192,
+        119,
+        245,
+        193,
+        55,
+        223,
+        195,
+        50
+      ]
+    },
+    {
+      "name": "VaultWithdrawn",
+      "discriminator": [
+        238,
+        9,
+        219,
+        172,
+        188,
+        77,
+        72,
+        104
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AgentNotActive",
+      "msg": "Agent is not active"
+    },
+    {
+      "code": 6001,
+      "name": "PolicyNotActive",
+      "msg": "Policy is not active"
+    },
+    {
+      "code": 6002,
+      "name": "ExceedsPerTxLimit",
+      "msg": "Transaction amount exceeds per-transaction spending limit"
+    },
+    {
+      "code": 6003,
+      "name": "ExceedsDailyLimit",
+      "msg": "Transaction would exceed daily spending limit"
+    },
+    {
+      "code": 6004,
+      "name": "ProtocolNotAllowed",
+      "msg": "Target protocol is not in the allowed list"
+    },
+    {
+      "code": 6005,
+      "name": "UnauthorizedOwner",
+      "msg": "Only the owner can perform this action"
+    },
+    {
+      "code": 6006,
+      "name": "UnauthorizedAgent",
+      "msg": "Only the registered agent can execute transactions"
+    },
+    {
+      "code": 6007,
+      "name": "TooManyProtocols",
+      "msg": "Allowed protocols list exceeds maximum capacity"
+    },
+    {
+      "code": 6008,
+      "name": "AgentAlreadyRegistered",
+      "msg": "Agent is already registered"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidSpendingLimit",
+      "msg": "Invalid spending limit: must be greater than zero"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidDailyLimit",
+      "msg": "Daily limit must be greater than or equal to per-transaction limit"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6012,
+      "name": "UnsupportedProtocol",
+      "msg": "This version only executes native SOL transfers via the System Program"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidRecipient",
+      "msg": "Recipient cannot be the vault itself"
+    },
+    {
+      "code": 6014,
+      "name": "NonceExhausted",
+      "msg": "Transaction nonce exhausted"
+    },
+    {
+      "code": 6015,
+      "name": "InsufficientVaultFunds",
+      "msg": "Vault has insufficient SOL"
+    },
+    {
+      "code": 6016,
+      "name": "VaultRentReserve",
+      "msg": "Agent spending must preserve the vault rent reserve"
+    }
+  ],
+  "types": [
+    {
+      "name": "AgentConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentNonce",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentPaused",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Policy",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "max_spend_per_tx",
+            "type": "u64"
+          },
+          {
+            "name": "daily_limit",
+            "type": "u64"
+          },
+          {
+            "name": "daily_spent",
+            "type": "u64"
+          },
+          {
+            "name": "day_start",
+            "type": "i64"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "allowed_protocols",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PolicyUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "max_spend_per_tx",
+            "type": "u64"
+          },
+          {
+            "name": "daily_limit",
+            "type": "u64"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransactionBlocked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "target_protocol",
+            "type": "pubkey"
+          },
+          {
+            "name": "daily_spent",
+            "type": "u64"
+          },
+          {
+            "name": "daily_limit",
+            "type": "u64"
+          },
+          {
+            "name": "reason_code",
+            "type": "u8"
+          },
+          {
+            "name": "rejected_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransactionLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "target_protocol",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "executed_at",
+            "type": "i64"
+          },
+          {
+            "name": "was_approved",
+            "type": "bool"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransactionValidated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "target_protocol",
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "executed_at",
+            "type": "i64"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultFunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultWithdrawn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

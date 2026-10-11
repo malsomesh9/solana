@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "program": "solana_guard",
+  "productionRust": {
+    "files": [
+      {
+        "path": "programs/solana_guard/src/lib.rs",
+        "physicalLines": 785,
+        "nonblankNonCommentOnlyLines": 640,
+        "sha256": "e526b9c19ed164b9202755130069e193ebf2611606bed2a7daa80640e992b7ad"
+      }
+    ],
+    "physicalLines": 785,
+    "nonblankNonCommentOnlyLines": 640,
+    "nonblankNonCommentOnlyLinesExcludingEmbeddedTests": 585
+  },
+  "integrationTests": {
+    "files": [
+      {
+        "path": "programs/solana_guard/tests/policy_flow.rs",
+        "physicalLines": 629,
+        "nonblankNonCommentOnlyLines": 582,
+        "sha256": "bf0c74e29cee2c197fcdc74456ca76adaa830a020914a53b44284154742629c7"
+      }
+    ],
+    "physicalLines": 629,
+    "nonblankNonCommentOnlyLines": 582
+  },
+  "abiExamples": {
+    "files": [
+      {
+        "path": "programs/solana_guard/examples/sdk_vectors.rs",
+        "physicalLines": 133,
+        "nonblankNonCommentOnlyLines": 131,
+        "sha256": "398f81470ceb5ecd2c7dd802053e2083779a6cdfc2371bd9f2f7bd3421b0de4f"
+      }
+    ],
+    "physicalLines": 133,
+    "nonblankNonCommentOnlyLines": 131
+  },
+  "scopeFingerprint": "3404e9d9ea69ab6a87e3e0d9b5779671f457c47e8dd995c76d6f7555efb26a4e",
+  "method": "Physical lines and nonblank lines excluding //-only comments; inline comments on code count. Separate production-only count excludes trailing #[cfg(test)] modules; integration tests/examples listed separately. Dependencies/generated IDL excluded."
+}

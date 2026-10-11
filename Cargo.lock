@@ -2695,7 +2695,7 @@ checksum = "5e2abdb1223eea8ec64136f39cb1ffcf257e00f915c957c35c0dd9e3f4e700b0"
 
 [[package]]
 name = "solana-guard"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anchor-lang",
  "litesvm",

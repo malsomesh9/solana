@@ -1,6 +1,6 @@
 [package]
 name = "solana-guard"
-version = "0.1.0"
+version = "0.2.0"
 description = "On-chain risk enforcement layer for AI agents on Solana"
 edition = "2021"
 
@@ -20,7 +20,7 @@ custom-heap = []
 custom-panic = []
 
 [dependencies]
-anchor-lang = "1.0.0"
+anchor-lang = "=1.0.2"
 
 [dev-dependencies]
 litesvm = "0.10.0"

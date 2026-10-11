@@ -589,8 +589,7 @@ export default function Homepage({
         </div>
         <div className="sg-footer-bottom">
           <p>
-            Devnet MVP. Not audited. Guarded fund movement is still in
-            development.
+            Devnet MVP. Not audited. The dashboard evaluates policies; it does not move funds.
           </p>
           <a href="#top">Back to top ↑</a>
         </div>
